@@ -1,0 +1,27 @@
+{
+  "name": "fundsphere",
+  "version": "1.0.0",
+  "description": "FundSphere - Production-Style Crowdfunding Platform",
+  "scripts": {
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "build": "npm run build:server && npm run build:client",
+    "db:push": "npm --prefix server run db:push",
+    "db:seed": "npm --prefix server run db:seed",
+    "db:generate": "npm --prefix server run db:generate"
+  },
+  "keywords": [
+    "crowdfunding",
+    "react",
+    "nodejs",
+    "express",
+    "typescript",
+    "prisma",
+    "postgresql",
+    "fundsphere"
+  ],
+  "author": "FundSphere Team",
+  "license": "MIT"
+}

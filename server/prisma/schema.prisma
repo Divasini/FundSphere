@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  FUNDED
+  SUCCESSFUL
+  FAILED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String                @id @default(cuid())
+  name         String
+  email        String                @unique
+  passwordHash String
+  role         Role                  @default(USER)
+  avatar       String?
+  bio          String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  campaigns    Campaign[]
+  contributions Contribution[]
+  notifications Notification[]
+  interactions CampaignInteraction[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String                @id @default(cuid())
+  name        String                @unique
+  slug        String                @unique
+  description String?
+  icon        String?
+  isActive    Boolean               @default(true)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  campaigns   Campaign[]
+  interactions CampaignInteraction[]
+
+  @@map("categories")
+}
+
+model Campaign {
+  id              String                @id @default(cuid())
+  creatorId       String
+  categoryId      String
+  title           String
+  slug            String                @unique
+  shortDescription String
+  description     String
+  fundingGoal     Float
+  amountRaised    Float                 @default(0)
+  deadline        DateTime
+  status          CampaignStatus        @default(DRAFT)
+  coverImage      String?
+  rejectionReason String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  creator         User                  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  category        Category              @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  contributions   Contribution[]
+  updates         CampaignUpdate[]
+  interactions    CampaignInteraction[]
+
+  @@index([status])
+  @@index([deadline])
+  @@index([categoryId])
+  @@index([creatorId])
+  @@map("campaigns")
+}
+
+model Contribution {
+  id                   String        @id @default(cuid())
+  campaignId           String
+  contributorId        String
+  amount               Float
+  paymentStatus        PaymentStatus @default(PENDING)
+  transactionReference String        @unique
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  campaign             Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contributor          User          @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+  refund               Refund?
+
+  @@index([campaignId])
+  @@index([contributorId])
+  @@index([paymentStatus])
+  @@map("contributions")
+}
+
+model Refund {
+  id              String        @id @default(cuid())
+  contributionId  String        @unique
+  amount          Float
+  status          RefundStatus  @default(COMPLETED)
+  refundReference String        @unique
+  processedAt     DateTime      @default(now())
+
+  contribution    Contribution  @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+
+  @@map("refunds")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model CampaignUpdate {
+  id         String   @id @default(cuid())
+  campaignId String
+  title      String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@map("campaign_updates")
+}
+
+model CampaignInteraction {
+  id              String   @id @default(cuid())
+  userId          String
+  campaignId      String
+  categoryId      String
+  interactionType String
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([campaignId])
+  @@index([categoryId])
+  @@map("campaign_interactions")
+}
