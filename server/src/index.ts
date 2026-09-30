@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { env } from './config/env';
 import apiRouter from './routes';
 import { errorHandler } from './middleware/errorMiddleware';
@@ -32,8 +33,29 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api', apiRouter);
 
-// 404 Handler
-app.use((req, res) => {
+// --- Production: Serve React Frontend ---
+const clientDistPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
+// SPA catch-all: any non-API route serves index.html for client-side routing
+app.get('*', (req, res, next) => {
+  // Don't catch API routes
+  if (req.originalUrl.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(clientDistPath, 'index.html'), (err) => {
+    if (err) {
+      // If frontend isn't built yet, show a helpful message
+      res.status(404).json({
+        success: false,
+        message: `API endpoint '${req.originalUrl}' not found`,
+      });
+    }
+  });
+});
+
+// 404 Handler (only for unmatched /api routes now)
+app.use((req: express.Request, res: express.Response) => {
   res.status(404).json({
     success: false,
     message: `API endpoint '${req.originalUrl}' not found`,

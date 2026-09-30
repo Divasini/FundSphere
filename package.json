@@ -8,6 +8,7 @@
     "build:server": "npm --prefix server run build",
     "build:client": "npm --prefix client run build",
     "build": "npm run build:server && npm run build:client",
+    "render-build": "npm --prefix client install && npm --prefix server install && npm --prefix client run build && cd server && npx prisma generate && npm run build",
     "db:push": "npm --prefix server run db:push",
     "db:seed": "npm --prefix server run db:seed",
     "db:generate": "npm --prefix server run db:generate"
